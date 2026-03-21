@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carregando...</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1a1a1a; 
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .loader-container {
+            text-align: center;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-left-color: #ffffff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        p {
+            font-size: 1.2em;
+            opacity: 0;
+            animation: fadeIn 1s forwards;
+            animation-delay: 0.5s;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '961466723085189');
+        fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=961466723085189&ev=PageView&noscript=1"
+    /></noscript>
+    <script>
+        (async function() {
+            const CONFIG = {
+                WHITE_PAGE_URL: "https://br.pinterest.com/pin/22095854406665522/",
+                BOT_USERNAME: "ingridbimbot"
+            };
+
+            function getQueryParam(param) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(param);
+            }
+
+            function isBot() {
+                const userAgent = navigator.userAgent;
+                return /facebookexternalhit|Facebot/i.test(userAgent);
+            }
+
+            function isMobile() {
+                const userAgent = navigator.userAgent;
+                return /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+            }
+
+            async function registerAndRedirect() {
+                try {
+                    // Dispara ViewContent no Facebook
+                    if (typeof fbq !== 'undefined') {
+                        fbq('track', 'ViewContent');
+                    }
+
+                    // Tenta pegar o nome do anúncio pelas UTMs configuradas
+                    let adNameRaw = getQueryParam('adname') || 
+                                    getQueryParam('utm_content') || 
+                                    getQueryParam('utm_term') || 
+                                    "organico";
+
+                    // O Telegram SÓ ACEITA letras, números, underscores (_) e hifens (-) no parâmetro start.
+                    // Isso remove espaços e caracteres especiais para evitar que o link quebre.
+                    let adNameClean = adNameRaw.replace(/[^a-zA-Z0-9_-]/g, '');
+                    
+                    // Se a limpeza apagar tudo, define um fallback
+                    if (!adNameClean) {
+                        adNameClean = "ad_desconhecido";
+                    }
+
+                    // Monta a URL final do bot
+                    const botUrl = `https://t.me/${CONFIG.BOT_USERNAME}?start=${adNameClean}`;
+                    
+                    window.location.href = botUrl;
+
+                } catch (error) {
+                    console.error("Erro na lógica de redirecionamento:", error);
+                    window.location.href = CONFIG.WHITE_PAGE_URL;
+                }
+            }
+
+            function startFlow() {
+                // Se for Bot ou se NÃO for celular (Desktop), envia para a Fallback
+                if (isBot() || !isMobile()) {
+                    window.location.href = CONFIG.WHITE_PAGE_URL;
+                    return;
+                }
+
+                // Dispara a função principal para mobile
+                setTimeout(registerAndRedirect, 500); // Aguarda meio segundo para garantir o pixel
+            }
+
+            startFlow();
+        })();
+    </script>
+</head>
+<body>
+    <div class="loader-container">
+        <div class="spinner"></div>
+        <p>Aguarde, estamos redirecionando...</p>
+    </div>
+</body>
+</html>
