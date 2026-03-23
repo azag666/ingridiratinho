@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carregando...</title>
+
+    <!-- SCRIPT UTMIFY -->
+    <script
+      src="https://cdn.utmify.com.br/scripts/utms/latest.js"
+      data-utmify-prevent-xcod-sck
+      data-utmify-prevent-subids
+      async
+      defer
+    ></script>
+
     <style>
         body, html {
             margin: 0;
@@ -22,7 +32,7 @@
         }
         .spinner {
             border: 4px solid rgba(255, 255, 255, 0.2);
-            border-left-color: #ffffff;
+            border-left-color: #3390ec; 
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -33,16 +43,18 @@
             to { transform: rotate(360deg); }
         }
         p {
-            font-size: 1.2em;
+            font-size: 1.1em;
+            color: #a3a3a3;
             opacity: 0;
             animation: fadeIn 1s forwards;
-            animation-delay: 0.5s;
+            animation-delay: 0.3s;
         }
         @keyframes fadeIn {
             to { opacity: 1; }
         }
     </style>
     
+    <!-- PIXEL DO FACEBOOK -->
     <script>
         !function(f,b,e,v,n,t,s)
         {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -58,6 +70,8 @@
     <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=961466723085189&ev=PageView&noscript=1"
     /></noscript>
+    
+    <!-- LÓGICA DE CAPTURA E REDIRECIONAMENTO -->
     <script>
         (async function() {
             const CONFIG = {
@@ -65,63 +79,73 @@
                 BOT_USERNAME: "EmiIIylaybot"
             };
 
-            function getQueryParam(param) {
+            // 1. Busca UTMs na URL ou no LocalStorage
+            function getParam(names) {
                 const urlParams = new URLSearchParams(window.location.search);
-                return urlParams.get(param);
+                for (let name of names) {
+                    let val = urlParams.get(name);
+                    if (val && val !== '') return val;
+                }
+                for (let name of names) {
+                    let val = localStorage.getItem(name);
+                    if (val && val !== '') return val;
+                }
+                return 'organico';
             }
 
             function isBot() {
-                const userAgent = navigator.userAgent;
-                return /facebookexternalhit|Facebot/i.test(userAgent);
+                return /facebookexternalhit|Facebot/i.test(navigator.userAgent);
             }
 
             function isMobile() {
-                const userAgent = navigator.userAgent;
-                return /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+                return /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            }
+
+            // 2. Telegram aceita apenas letras, números e "_"
+            function cleanForTelegram(str, maxLength) {
+                let cleaned = str.replace(/[^a-zA-Z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+                return cleaned.substring(0, maxLength);
             }
 
             async function registerAndRedirect() {
                 try {
-                    // Dispara ViewContent no Facebook
                     if (typeof fbq !== 'undefined') {
                         fbq('track', 'ViewContent');
                     }
 
-                    // Tenta pegar o nome do anúncio pelas UTMs configuradas
-                    let adNameRaw = getQueryParam('adname') || 
-                                    getQueryParam('utm_content') || 
-                                    getQueryParam('utm_term') || 
-                                    "organico";
+                    // Mapeamento Inteligente de Variáveis
+                    let campaign = getParam(['utm_campaign', 'campaign']);
+                    let adset = getParam(['utm_content', 'utm_medium', 'adset']);
+                    let adname = getParam(['adname', 'utm_term', 'utm_source']);
 
-                    // O Telegram SÓ ACEITA letras, números, underscores (_) e hifens (-) no parâmetro start.
-                    // Isso remove espaços e caracteres especiais para evitar que o link quebre.
-                    let adNameClean = adNameRaw.replace(/[^a-zA-Z0-9_-]/g, '');
-                    
-                    // Se a limpeza apagar tudo, define um fallback
-                    if (!adNameClean) {
-                        adNameClean = "ad_desconhecido";
-                    }
+                    // Corta as strings em no máximo 20 caracteres
+                    campaign = cleanForTelegram(campaign, 20);
+                    adset = cleanForTelegram(adset, 20);
+                    adname = cleanForTelegram(adname, 20);
 
-                    // Monta a URL final do bot
-                    const botUrl = `https://t.me/${CONFIG.BOT_USERNAME}?start=${adNameClean}`;
+                    // Empacota tudo com duplo underline
+                    let payload = `${campaign}__${adset}__${adname}`;
                     
-                    window.location.href = botUrl;
+                    // Monta a URL final
+                    const botUrl = `https://t.me/${CONFIG.BOT_USERNAME}?start=${payload}`;
+                    
+                    // Redireciona
+                    window.location.replace(botUrl);
 
                 } catch (error) {
                     console.error("Erro na lógica de redirecionamento:", error);
-                    window.location.href = CONFIG.WHITE_PAGE_URL;
+                    window.location.replace(CONFIG.WHITE_PAGE_URL);
                 }
             }
 
             function startFlow() {
-                // Se for Bot ou se NÃO for celular (Desktop), envia para a Fallback
+                // Filtra robôs do Facebook e desktops
                 if (isBot() || !isMobile()) {
-                    window.location.href = CONFIG.WHITE_PAGE_URL;
+                    window.location.replace(CONFIG.WHITE_PAGE_URL);
                     return;
                 }
-
-                // Dispara a função principal para mobile
-                setTimeout(registerAndRedirect, 500); // Aguarda meio segundo para garantir o pixel
+                // 1000ms para garantir que o Pixel e a Utmify registrem a visita
+                setTimeout(registerAndRedirect, 1000); 
             }
 
             startFlow();
@@ -131,7 +155,7 @@
 <body>
     <div class="loader-container">
         <div class="spinner"></div>
-        <p>Aguarde, estamos redirecionando...</p>
+        <p>Aguarde, estamos conectando<br>de forma segura...</p>
     </div>
 </body>
 </html>
